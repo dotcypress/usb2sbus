@@ -1,0 +1,41 @@
+[package]
+name = "usb2sbus"
+version = "0.0.1"
+authors = ["Vitaly Domnikov <oss@vitaly.codes>"]
+repository = "https://github.com/dotcypress/usb2sbus"
+description = "RP2040 USB to SBUS bridge"
+edition = "2021"
+license = "MIT/Apache-2.0"
+readme = "README.md"
+
+[dependencies]
+defmt = "0.3.8"
+defmt-rtt = "0.4.0"
+portable-atomic = {version = "1.7.0", features = ["critical-section"]}
+rp2040-hal = { version = "0.10.2", features = [ "rt", "critical-section-impl"] }
+rtic = { version = "2.1.1", features = ["thumbv6-backend"] }
+rtic-monotonics = { version = "2.0.0", features = ["rp2040"] }
+rp2040-boot2 = "0.3.0"
+cortex-m = "0.7.7"
+panic-probe = "0.3.1"
+embedded-hal = "1.0.0"
+usbd-serial = "0.2.2"
+usb-device = "0.3.2"
+embedded-io = "0.6.1"
+
+[profile.dev]
+codegen-units = 1
+debug = 2
+debug-assertions = true
+incremental = false
+opt-level = 3
+overflow-checks = true
+
+[profile.release]
+codegen-units = 2
+debug = 1
+debug-assertions = false
+incremental = false
+lto = 'fat'
+opt-level = 3
+overflow-checks = false
