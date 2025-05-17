@@ -1,9 +1,11 @@
-# RP2040 USB to SBUS bridge
+# RP2040 USB to SBUS/MavLink bridge
 
 ## Pinout
 
 * GPIO0 - SBUS TX
 * GPIO1 - SBUS RX
+* GPIO4 - MavLink TX
+* GPIO5 - MavLink RX
 
 ## Building firmware
 

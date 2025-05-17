@@ -67,10 +67,12 @@ mod app {
         let usb_bus: &'static UsbBusAllocator<UsbBus> =
             singleton!(: UsbBusAllocator<UsbBus> = UsbBusAllocator::new(usb_bus)).unwrap();
 
+        let sbus_serial = SerialPort::new(usb_bus);
+        let mavlink_serial = SerialPort::new(usb_bus);
+
         let info = StringDescriptors::default()
             .manufacturer("https://vitaly.codes")
-            .product("USB <-> SBUS");
-        let serial = SerialPort::new(usb_bus);
+            .product("USB <-> SBUS/MavLink");
         let usb_dev = UsbDeviceBuilder::new(usb_bus, UsbVidPid(0x16c0, 0x27da))
             .strings(&[info])
             .unwrap()
@@ -80,7 +82,7 @@ mod app {
             pac::NVIC::unmask(pac::Interrupt::USBCTRL_IRQ);
         }
 
-        let uart_cfg = uart::UartConfig::new(
+        let sbus_uart_cfg = uart::UartConfig::new(
             100_000.Hz(),
             uart::DataBits::Eight,
             Some(uart::Parity::Even),
@@ -88,16 +90,39 @@ mod app {
         );
         pins.gpio0.set_output_override(gpio::OutputOverride::Invert);
         pins.gpio1.set_input_override(gpio::InputOverride::Invert);
-        let mut uart = uart::UartPeripheral::new(
+        let mut sbus_uart = uart::UartPeripheral::new(
             ctx.device.UART0,
             (pins.gpio0.into_function(), pins.gpio1.into_function()),
             &mut resets,
         )
-        .enable(uart_cfg, clocks.peripheral_clock.freq())
+        .enable(sbus_uart_cfg, clocks.peripheral_clock.freq())
         .unwrap();
-        uart.enable_rx_interrupt();
+        sbus_uart.set_fifos(true);
+        sbus_uart.enable_rx_interrupt();
 
-        let bridge = Bridge::new(serial, usb_dev, uart);
+        let mavlink_uart_cfg = uart::UartConfig::new(
+            115_200.Hz(),
+            uart::DataBits::Eight,
+            None,
+            uart::StopBits::One,
+        );
+        let mut mavlink_uart = uart::UartPeripheral::new(
+            ctx.device.UART1,
+            (pins.gpio4.into_function(), pins.gpio5.into_function()),
+            &mut resets,
+        )
+        .enable(mavlink_uart_cfg, clocks.peripheral_clock.freq())
+        .unwrap();
+        mavlink_uart.set_fifos(true);
+        mavlink_uart.enable_rx_interrupt();
+
+        let bridge = Bridge::new(
+            usb_dev,
+            sbus_serial,
+            mavlink_serial,
+            sbus_uart,
+            mavlink_uart,
+        );
         (Shared { bridge }, Local {})
     }
 
@@ -107,7 +132,16 @@ mod app {
     }
 
     #[task(binds = UART0_IRQ, shared = [bridge])]
-    fn uart_irq(mut ctx: uart_irq::Context) {
-        ctx.shared.bridge.lock(|bridge| bridge.handle_uart_irq());
+    fn sbus_uart_irq(mut ctx: sbus_uart_irq::Context) {
+        ctx.shared
+            .bridge
+            .lock(|bridge| bridge.handle_sbus_uart_irq());
+    }
+
+    #[task(binds = UART1_IRQ, shared = [bridge])]
+    fn mavlink_uart_irq(mut ctx: mavlink_uart_irq::Context) {
+        ctx.shared
+            .bridge
+            .lock(|bridge| bridge.handle_mavlink_uart_irq());
     }
 }
