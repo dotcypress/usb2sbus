@@ -189,6 +189,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "embedded-hal-bus"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0d3980bf28e8577db59fe2bdb3df868a419469d2cecb363644eea2b6f7797669"
+dependencies = [
+ "critical-section",
+ "embedded-hal 1.0.0",
+ "embedded-hal-async",
+ "portable-atomic",
+]
+
+[[package]]
 name = "embedded-hal-nb"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -579,6 +591,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "rtic-sync"
+version = "1.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d0c3648d8ab27216a940ccfc1939479bfd14010fbae9f5b7706a5b3d30ef561f"
+dependencies = [
+ "critical-section",
+ "embedded-hal 1.0.0",
+ "embedded-hal-async",
+ "embedded-hal-bus",
+ "heapless",
+ "portable-atomic",
+ "rtic-common",
+]
+
+[[package]]
 name = "rtic-time"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -687,6 +714,7 @@ dependencies = [
  "cortex-m",
  "defmt",
  "defmt-rtt",
+ "embedded-dma",
  "embedded-hal 1.0.0",
  "embedded-io",
  "panic-probe",
@@ -695,6 +723,8 @@ dependencies = [
  "rp2040-hal",
  "rtic",
  "rtic-monotonics",
+ "rtic-sync",
+ "stable_deref_trait",
  "usb-device",
  "usbd-serial",
 ]
