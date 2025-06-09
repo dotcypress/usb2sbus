@@ -98,8 +98,8 @@ mod app {
         let mavlink_vcp = SerialPort::new(usb_bus);
 
         let info = StringDescriptors::default()
-            .manufacturer("https://vitaly.codes")
-            .product("USB <-> SBUS/MavLink");
+            .manufacturer("vitaly.codes")
+            .product("SBUS/MavLink");
         let usb_dev = UsbDeviceBuilder::new(usb_bus, UsbVidPid(0x16c0, 0x27da))
             .strings(&[info])
             .unwrap()
