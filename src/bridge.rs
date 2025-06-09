@@ -4,7 +4,7 @@ use hal::{
     uart::{self, UartPeripheral},
     usb::UsbBus,
 };
-use usb_device::device::UsbDevice;
+use usb_device::device::{UsbDevice, UsbDeviceState};
 use usbd_serial::{
     embedded_io::{Read, Write},
     SerialPort,
@@ -50,7 +50,9 @@ impl Bridge {
     pub fn handle_uart_irq(&mut self) {
         let mut scratch = [0; 64];
         if let Ok(n) = self.uart.read(&mut scratch) {
-            self.serial.write_all(&scratch[0..n]).ok();
+            if self.usb_dev.state() == UsbDeviceState::Configured {
+                self.serial.write_all(&scratch[0..n]).ok();
+            }
         }
     }
 }

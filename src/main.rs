@@ -27,6 +27,8 @@ rp2040_timer_monotonic!(Mono);
 
 #[rtic::app(device = pac, peripherals = true)]
 mod app {
+    use usbd_serial::USB_CLASS_CDC;
+
     use super::*;
 
     #[local]
@@ -74,7 +76,7 @@ mod app {
         let usb_dev = UsbDeviceBuilder::new(usb_bus, UsbVidPid(0x16c0, 0x27da))
             .strings(&[info])
             .unwrap()
-            .device_class(2)
+            .device_class(USB_CLASS_CDC)
             .build();
         unsafe {
             pac::NVIC::unmask(pac::Interrupt::USBCTRL_IRQ);
@@ -101,7 +103,7 @@ mod app {
         (Shared { bridge }, Local {})
     }
 
-    #[task(binds = USBCTRL_IRQ, shared = [bridge])]
+    #[task(priority=2, binds = USBCTRL_IRQ, shared = [bridge])]
     fn usb_irq(mut ctx: usb_irq::Context) {
         ctx.shared.bridge.lock(|bridge| bridge.handle_usb_irq());
     }
