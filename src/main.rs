@@ -28,7 +28,6 @@ use rtic_sync::{channel::*, make_channel};
 use sbus::FutabaPacket;
 use usb_device::{class_prelude::*, prelude::*};
 use usbd_serial::SerialPort;
-use usbd_serial::USB_CLASS_CDC;
 
 #[link_section = ".boot2"]
 #[no_mangle]
@@ -94,8 +93,8 @@ mod app {
         let usb_bus: &'static UsbBusAllocator<UsbBus> =
             singleton!(: UsbBusAllocator<UsbBus> = UsbBusAllocator::new(usb_bus)).unwrap();
 
-        let sbus_vcp = SerialPort::new(usb_bus);
-        let mavlink_vcp = SerialPort::new(usb_bus);
+        let sbus_vcp = SerialPort::new_with_interface_names(usb_bus, Some("mc"), Some("md"));
+        let mavlink_vcp = SerialPort::new_with_interface_names(usb_bus, None, None);
 
         let info = StringDescriptors::default()
             .manufacturer("vitaly.codes")
@@ -103,7 +102,7 @@ mod app {
         let usb_dev = UsbDeviceBuilder::new(usb_bus, UsbVidPid(0x16c0, 0x27da))
             .strings(&[info])
             .unwrap()
-            .device_class(USB_CLASS_CDC)
+            .composite_with_iads()
             .build();
 
         unsafe {
@@ -211,7 +210,7 @@ mod app {
 
         (sbus_vcp, mavlink_vcp).lock(|sbus_vcp, mavlink_vcp| {
             if usb_dev.poll(&mut [sbus_vcp, mavlink_vcp]) {
-                let mut scratch = [0; 128];
+                let mut scratch = [0; 256];
                 sbus_vcp
                     .read(&mut scratch)
                     .ok()
@@ -242,7 +241,7 @@ mod app {
             sbus_buffer,
             ..
         } = ctx.local;
-        let mut scratch = [0; 128];
+        let mut scratch = [0; 256];
         sbus_rx
             .read_raw(&mut scratch)
             .ok()
@@ -266,7 +265,7 @@ mod app {
             mavlink_buffer,
             ..
         } = ctx.local;
-        let mut scratch = [0; 128];
+        let mut scratch = [0; 256];
         mavlink_rx
             .read_raw(&mut scratch)
             .ok()

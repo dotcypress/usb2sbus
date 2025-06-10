@@ -709,7 +709,7 @@ dependencies = [
 
 [[package]]
 name = "usb2sbus"
-version = "0.0.1"
+version = "0.1.0"
 dependencies = [
  "cortex-m",
  "defmt",
