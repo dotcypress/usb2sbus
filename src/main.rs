@@ -93,8 +93,8 @@ mod app {
         let usb_bus: &'static UsbBusAllocator<UsbBus> =
             singleton!(: UsbBusAllocator<UsbBus> = UsbBusAllocator::new(usb_bus)).unwrap();
 
-        let sbus_vcp = SerialPort::new_with_interface_names(usb_bus, Some("mc"), Some("md"));
-        let mavlink_vcp = SerialPort::new_with_interface_names(usb_bus, None, None);
+        let sbus_vcp = SerialPort::new(usb_bus);
+        let mavlink_vcp = SerialPort::new(usb_bus);
 
         let info = StringDescriptors::default()
             .manufacturer("vitaly.codes")
