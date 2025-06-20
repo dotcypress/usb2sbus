@@ -76,7 +76,6 @@ mod app {
             &mut resets,
             &mut watchdog,
         )
-        .ok()
         .expect("Failed to init clocks");
 
         let sio = hal::Sio::new(ctx.device.SIO);
