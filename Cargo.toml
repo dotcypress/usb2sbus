@@ -1,6 +1,6 @@
 [package]
 name = "usb2sbus"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Vitaly Domnikov <oss@vitaly.codes>"]
 repository = "https://github.com/dotcypress/usb2sbus"
 description = "RP2040 USB to SBUS bridge"
