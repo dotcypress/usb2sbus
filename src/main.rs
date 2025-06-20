@@ -77,7 +77,7 @@ mod app {
             &mut watchdog,
         )
         .ok()
-        .unwrap();
+        .expect("Failed to init clocks");
 
         let sio = hal::Sio::new(ctx.device.SIO);
         let mut pins = Pins::new(
@@ -91,7 +91,8 @@ mod app {
         let usb_dpram = ctx.device.USBCTRL_DPRAM;
         let usb_bus = UsbBus::new(usb_regs, usb_dpram, clocks.usb_clock, true, &mut resets);
         let usb_bus: &'static UsbBusAllocator<UsbBus> =
-            singleton!(: UsbBusAllocator<UsbBus> = UsbBusAllocator::new(usb_bus)).unwrap();
+            singleton!(: UsbBusAllocator<UsbBus> = UsbBusAllocator::new(usb_bus))
+                .expect("Failed to init USB buffer");
 
         let sbus_vcp = SerialPort::new(usb_bus);
         let mavlink_vcp = SerialPort::new(usb_bus);
@@ -101,7 +102,7 @@ mod app {
             .manufacturer("vitaly.codes");
         let usb_dev = UsbDeviceBuilder::new(usb_bus, UsbVidPid(0x1209, 0xb422))
             .strings(&[info])
-            .unwrap()
+            .expect("Failed to init USB")
             .composite_with_iads()
             .build();
 
@@ -123,7 +124,7 @@ mod app {
             &mut resets,
         )
         .enable(sbus_uart_cfg, clocks.peripheral_clock.freq())
-        .unwrap();
+        .expect("Failed to init SBUS UART");
         sbus_uart.enable_rx_interrupt();
         let (sbus_rx, sbus_tx) = sbus_uart.split();
 
@@ -139,7 +140,7 @@ mod app {
             &mut resets,
         )
         .enable(mavlink_uart_cfg, clocks.peripheral_clock.freq())
-        .unwrap();
+        .expect("Failed to init MavLink UART");
         mavlink_uart.enable_rx_interrupt();
         let (mavlink_rx, mavlink_tx) = mavlink_uart.split();
 
@@ -149,13 +150,15 @@ mod app {
         let (sbus_vcp_sender, sbus_vcp_receiver) = make_channel!(FutabaPacket, 64);
         let (mavlink_vcp_sender, mavlink_vcp_receiver) = make_channel!(MavLinkPacket, 64);
 
-        let sbus_tx_buf = singleton!(: FutabaPacket = FutabaPacket::new()).unwrap();
-        let mavlink_tx_buf = singleton!(: MavLinkPacket = MavLinkPacket::new()).unwrap();
+        let sbus_tx_buf =
+            singleton!(: FutabaPacket = FutabaPacket::new()).expect("Failed to init SBUS buffer");
+        let mavlink_tx_buf = singleton!(: MavLinkPacket = MavLinkPacket::new())
+            .expect("Failed to init MavLink buffer");
         let dma = dma::DMAExt::split(ctx.device.DMA, &mut resets);
         let sbus_tx = Some(SbusSink::StandBy((dma.ch0, sbus_tx_buf, sbus_tx)));
         let mavlink_tx = Some(MavLinkSink::StandBy((dma.ch1, mavlink_tx_buf, mavlink_tx)));
 
-        uart_arbiter::spawn().unwrap();
+        uart_arbiter::spawn().expect("Failed to spawn arbiter");
 
         (
             Shared {
@@ -302,8 +305,8 @@ mod app {
             ..
         } = ctx.shared;
 
-        let mut sbus_sink = sbus_tx.take().unwrap();
-        let mut mavlink_sink = mavlink_tx.take().unwrap();
+        let mut sbus_sink = sbus_tx.take().expect("Can't find SBUS sink");
+        let mut mavlink_sink = mavlink_tx.take().expect("Can't find MavLink sink");
 
         loop {
             sbus_sink = match sbus_sink {
